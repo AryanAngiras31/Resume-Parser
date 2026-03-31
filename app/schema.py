@@ -19,10 +19,10 @@ class CandidateExtraction(BaseModel):
 
     # PHASE 1: Personal Identity & Contact
     first_name: str = Field(description="Candidate's first name")
+    last_name: str = Field(description="Candidate's last name")
     middle_name: Optional[str] = Field(
         description="Candidate's middle name, if available", default=None
     )
-    last_name: str = Field(description="Candidate's last name")
     gender: Literal["Male", "Female", "Other", None] = Field(
         description="Infer gender from name or pronouns if possible, otherwise null",
         default=None,
@@ -31,9 +31,9 @@ class CandidateExtraction(BaseModel):
         description="Date of birth in DD/MM/YYYY format, if explicitly stated",
         default=None,
     )
-    email: Optional[str] = Field(description="Candidate's email address", default=None)
+    email: str = Field(description="Candidate's email address", default=None)
     primary_contact: Optional[str] = Field(
-        description="Primary phone number (include country code like +91 if present)",
+        description="Primary phone number (do not include country code)",
         default=None,
     )
     alternate_contact: Optional[str] = Field(
@@ -45,7 +45,7 @@ class CandidateExtraction(BaseModel):
         description="City name (e.g., 'Bangalore', 'Chennai')", default=None
     )
     pincode: Optional[str] = Field(
-        description="6-digit postal code/pincode if in India", default=None
+        description="6-digit postal code/pincode if present", default=None
     )
     full_present_address: Optional[str] = Field(
         description="The complete street address", default=None

@@ -14,9 +14,14 @@ from openai import OpenAI
 
 from app.schema import CandidateExtraction
 
-# Initialize Instructor client with OpenAI
-# Uses the OPENAI_API_KEY environment variable
-client = instructor.from_openai(OpenAI())
+# Initialize using the Groq API key and base URL
+client = instructor.from_openai(
+    OpenAI(
+        base_url="https://api.groq.com/openai/v1",
+        api_key=os.environ.get("GROQ_API_KEY"),
+    ),
+    mode=instructor.Mode.JSON,
+)
 
 # Global variable to hold ML models in memory
 ml_models = None
@@ -30,9 +35,7 @@ async def lifespan(app: FastAPI):
     are instantly available for incoming API requests.
     """
     global ml_models
-    print(
-        "Loading Marker OCR models into memory (This may take a minute on first boot)..."
-    )
+    print("Loading Marker OCR models into memory...")
     ml_models = load_all_models()
     print("Models loaded successfully. API is ready.")
     yield
@@ -46,7 +49,7 @@ app = FastAPI(title="Resume Auto-Populate API", lifespan=lifespan)
 @app.post("/api/v1/extract-resume")
 async def extract_resume(file: UploadFile = File(...)):
     if not file.filename.lower().endswith((".pdf")):
-        raise HTTPException(status_code=400, detail="Only PDF files are supported.")
+        raise HTTPException(status_code=400, detail="An error occured while parsing the file")
 
     start_time = time.time()
     temp_pdf_path = None
@@ -68,7 +71,7 @@ async def extract_resume(file: UploadFile = File(...)):
         You are an expert ATS data extraction system tailored for the Indian IT job market.
         Extract the requested fields from the resume markdown.
         Pay special attention to calculating total experience accurately into Years and Months.
-        If salary (LPA) or notice period (days) is not explicitly stated in the resume, return null for those fields rather than guessing.
+        If any of the requested fields are not explicitly stated in the resume, return null for those fields rather than guessing.
         Standardize the highest education qualification to common acronyms (e.g., B-TECH, M-TECH, MCA).
         """
 

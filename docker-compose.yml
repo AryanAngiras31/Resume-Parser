@@ -5,8 +5,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      # Replace this with your actual OpenAI API Key, or pass it via terminal
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - GROQ_API_KEY=${GROQ_API_KEY}
     volumes:
       # This volume maps the HuggingFace cache so Marker doesn't re-download
       # its 2GB of OCR models every time you restart the container
