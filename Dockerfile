@@ -18,7 +18,8 @@ WORKDIR /app
 
 # Copy requirements and install them
 COPY requirements.txt /app/
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --default-timeout=1000 -r requirements.txt \
+    --extra-index-url https://download.pytorch.org/whl/cpu
 
 # Copy the application code
 COPY ./app /app/app

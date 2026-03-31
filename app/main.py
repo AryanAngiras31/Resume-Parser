@@ -6,13 +6,12 @@ from contextlib import asynccontextmanager
 
 import instructor
 from fastapi import FastAPI, File, HTTPException, UploadFile
-from fastapi.responses import JSONResponse
 
 # Marker OCR imports
-from marker.convert import convert_single_pdf
-from marker.models import load_all_models
+from marker.converters.pdf import PdfConverter
+from marker.models import create_model_dict
+from marker.output import text_from_rendered
 from openai import OpenAI
-from PIL import Image
 
 from app.schema import CandidateExtraction
 
@@ -25,8 +24,8 @@ client = instructor.from_openai(
     mode=instructor.Mode.JSON,
 )
 
-# Global variable to hold ML models in memory
-ml_models = None
+# Global variable to hold converter and models in memory
+converter_instance = None
 
 
 @asynccontextmanager
@@ -36,13 +35,14 @@ async def lifespan(app: FastAPI):
     We load the heavy Marker OCR models into memory here so they
     are instantly available for incoming API requests.
     """
-    global ml_models
+    global converter_instance
     print("Loading Marker OCR models into memory...")
-    ml_models = load_all_models()
+    models_dict = create_model_dict()
+    converter_instance = PdfConverter(artifact_dict=models_dict)
     print("Models loaded successfully.")
     yield
     # Cleanup on shutdown
-    ml_models = None
+    converter_instance = None
 
 
 app = FastAPI(title="Resume Auto-Populate API", lifespan=lifespan)
@@ -63,43 +63,29 @@ async def extract_resume(file: UploadFile = File(...)):
     temp_pdf_path = None
 
     try:
-        # Create a temporary file placeholder for the PDF
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_pdf:
-            temp_pdf_path = temp_pdf.name
+        # 2. Create temporary file for the pdf since the conberter requires it
+        suffix = os.path.splitter(file.filename)[1]
+        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+            tmp.write(await file.read())
+            tmp_file_path = tmp.name
 
-        file_bytes = await file.read()
+            # This handles PDFs and Images natively
+            rendered = converter_instance(temp_file_path)
+            full_text, _, _ = text_from_rendered(rendered)
 
-        # 2. Format Routing: PDF vs Image
-        if filename.endswith(".pdf"):
-            # It's already a PDF, just write the bytes to the temp file
-            with open(temp_pdf_path, "wb") as f:
-                f.write(file_bytes)
-        else:
-            # It's an image. Convert it to a PDF in memory.
-            image = Image.open(io.BytesIO(file_bytes))
-
-            # PDFs do not support RGBA (transparency in PNGs). Convert to standard RGB.
-            if image.mode != "RGB":
-                image = image.convert("RGB")
-
-            # Save the image directly into our temporary PDF path
-            image.save(temp_pdf_path, "PDF", resolution=100.0)
-
-        # 3. Proceed with Marker exactly as before
-        full_text, images, out_meta = convert_single_pdf(temp_pdf_path, ml_models)
-
-        if not full_text or len(full_text.strip()) < 20:
+        if not full_text or len(full_text) < 20:
             raise HTTPException(
-                status_code=422,
-                detail="Could not extract readable text from the document.",
+                status_code=422, detail="Extraction using Marker Converter failed"
             )
 
+        # 3. Pass the retrieved text from the pdf to an LLM for semantic retrieval with a particular schema
         system_prompt = """
         You are an expert ATS data extraction system tailored for the Indian IT job market.
         Extract the requested fields from the resume markdown.
         Pay special attention to calculating total experience accurately into Years and Months.
-        If any of the requested fields are not explicitly stated in the resume, return null for those fields rather than guessing them.
+        Current/Expected CTC should be extracted as floats representing Lakhs Per Annum (LPA).
         Standardize the highest education qualification to common acronyms (e.g., B-TECH, M-TECH, MCA).
+        If any of the requested fields are not explicitly stated in the resume, return null for those fields rather than guessing them.
         """
 
         candidate_data = client.chat.completions.create(
@@ -122,7 +108,6 @@ async def extract_resume(file: UploadFile = File(...)):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
     finally:
         # 4. Clean up the temporary file regardless of success or failure
         if temp_pdf_path and os.path.exists(temp_pdf_path):
