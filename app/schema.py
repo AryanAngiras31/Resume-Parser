@@ -31,7 +31,7 @@ class CandidateExtraction(BaseModel):
         description="Date of birth in DD/MM/YYYY format, if explicitly stated",
         default=None,
     )
-    email: str = Field(description="Candidate's email address", default=None)
+    email: Optional[str] = Field(description="Candidate's email address", default=None)
     primary_contact: Optional[str] = Field(
         description="Primary phone number (do not include country code)",
         default=None,

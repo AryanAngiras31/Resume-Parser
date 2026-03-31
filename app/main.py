@@ -64,13 +64,13 @@ async def extract_resume(file: UploadFile = File(...)):
 
     try:
         # 2. Create temporary file for the pdf since the conberter requires it
-        suffix = os.path.splitter(file.filename)[1]
+        suffix = os.path.splitext(file.filename)[1]
         with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
             tmp.write(await file.read())
             tmp_file_path = tmp.name
 
             # This handles PDFs and Images natively
-            rendered = converter_instance(temp_file_path)
+            rendered = converter_instance(tmp_file_path)
             full_text, _, _ = text_from_rendered(rendered)
 
         if not full_text or len(full_text) < 20:
@@ -89,7 +89,7 @@ async def extract_resume(file: UploadFile = File(...)):
         """
 
         candidate_data = client.chat.completions.create(
-            model="gpt-4o-mini",  # Or Llama-3 on Groq
+            model="llama-3.3-70b-versatile",
             response_model=CandidateExtraction,
             messages=[
                 {"role": "system", "content": system_prompt},
