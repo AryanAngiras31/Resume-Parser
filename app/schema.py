@@ -19,7 +19,9 @@ class CandidateExtraction(BaseModel):
 
     # PHASE 1: Personal Identity & Contact
     first_name: str = Field(description="Candidate's first name")
-    last_name: str = Field(description="Candidate's last name")
+    last_name: str = Field(
+        description="Candidate's last name. Do not include the middle name or initial here"
+    )
     middle_name: Optional[str] = Field(
         description="Candidate's middle name, if available", default=None
     )
