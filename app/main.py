@@ -60,7 +60,7 @@ async def extract_resume(file: UploadFile = File(...)):
         )
 
     start_time = time.time()
-    temp_pdf_path = None
+    tmp_file_path = None
 
     try:
         # 2. Create temporary file for the pdf since the conberter requires it
@@ -69,9 +69,9 @@ async def extract_resume(file: UploadFile = File(...)):
             tmp.write(await file.read())
             tmp_file_path = tmp.name
 
-            # This handles PDFs and Images natively
-            rendered = converter_instance(tmp_file_path)
-            full_text, _, _ = text_from_rendered(rendered)
+        # This handles PDFs and Images natively
+        rendered = converter_instance(tmp_file_path)
+        full_text, _, _ = text_from_rendered(rendered)
 
         if not full_text or len(full_text) < 20:
             raise HTTPException(
@@ -110,5 +110,5 @@ async def extract_resume(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         # 4. Clean up the temporary file regardless of success or failure
-        if temp_pdf_path and os.path.exists(temp_pdf_path):
-            os.remove(temp_pdf_path)
+        if tmp_file_path and os.path.exists(tmp_file_path):
+            os.remove(tmp_file_path)

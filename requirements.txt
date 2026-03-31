@@ -77,10 +77,10 @@ surya-ocr==0.13.1
 sympy==1.14.0
 tenacity==9.1.4
 threadpoolctl==3.6.0
-tokenizers==0.22.2
+tokenizers==0.20.3
 torch==2.11.0+cpu
 tqdm==4.67.3
-transformers==4.57.6
+transformers==4.45.2
 typer==0.24.1
 typing-inspection==0.4.2
 typing_extensions==4.15.0
