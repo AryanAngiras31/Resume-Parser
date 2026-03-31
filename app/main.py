@@ -49,7 +49,9 @@ app = FastAPI(title="Resume Auto-Populate API", lifespan=lifespan)
 @app.post("/api/v1/extract-resume")
 async def extract_resume(file: UploadFile = File(...)):
     if not file.filename.lower().endswith((".pdf")):
-        raise HTTPException(status_code=400, detail="An error occured while parsing the file")
+        raise HTTPException(
+            status_code=400, detail="An error occured while parsing the file"
+        )
 
     start_time = time.time()
     temp_pdf_path = None
@@ -61,7 +63,7 @@ async def extract_resume(file: UploadFile = File(...)):
 
         full_text, images, out_meta = convert_single_pdf(temp_pdf_path, ml_models)
 
-        if not full_text or len(full_text.strip()) < 50:
+        if not full_text or len(full_text.strip()) < 20:
             raise HTTPException(
                 status_code=422, detail="Could not extract readable text from PDF."
             )
@@ -71,7 +73,7 @@ async def extract_resume(file: UploadFile = File(...)):
         You are an expert ATS data extraction system tailored for the Indian IT job market.
         Extract the requested fields from the resume markdown.
         Pay special attention to calculating total experience accurately into Years and Months.
-        If any of the requested fields are not explicitly stated in the resume, return null for those fields rather than guessing.
+        If any of the requested fields are not explicitly stated in the resume, return null for those fields rather than guessing them.
         Standardize the highest education qualification to common acronyms (e.g., B-TECH, M-TECH, MCA).
         """
 

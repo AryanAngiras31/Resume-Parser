@@ -5,4 +5,5 @@ pydantic==2.6.1
 instructor==1.0.0
 openai==1.12.0
 marker-pdf==0.3.1
-torch==2.2.0
+torch==2.4.1
+Pillow==10.2.0
