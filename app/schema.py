@@ -30,7 +30,7 @@ class CandidateExtraction(BaseModel):
         default=None,
     )
     date_of_birth: Optional[str] = Field(
-        description="Date of birth in DD/MM/YYYY format, if explicitly stated",
+        description="Date of birth explicitly formatted exactly as DD/MM/YYYY. You MUST convert strings like 'January 31 1995' into '31/01/1995'.",
         default=None,
     )
     email: Optional[str] = Field(description="Candidate's email address", default=None)
