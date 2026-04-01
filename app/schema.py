@@ -4,102 +4,130 @@ from pydantic import BaseModel, Field
 
 
 class SkillExtraction(BaseModel):
-    name: str = Field(
+    # Note: Changed to skillName. The LLM cannot know your database's numeric skillId.
+    # Your backend must map this extracted string to the correct DB skillId.
+    skillName: str = Field(
         description="The exact name of the technical skill, tool, or framework (e.g., 'AWS Deployment', 'Spring Boot')."
     )
-    competency: Literal["Beginner", "Intermediate", "Advanced"] = Field(
-        description="Estimate the proficiency level based on years of experience or context in the resume. Default to 'Intermediate' if unsure."
+    skillLevel: Literal["Beginner", "Intermediate", "Advanced"] = Field(
+        description="Estimate the proficiency level based on years of experience or context. Default to 'Intermediate' if unsure."
     )
 
 
 class CandidateExtraction(BaseModel):
     """
-    Schema for extracting candidate information to perfectly match the HRMS frontend form.
+    Schema for extracting candidate information to perfectly match the HRMS frontend CandidateFormValues interface.
     """
 
     # PHASE 1: Personal Identity & Contact
-    first_name: str = Field(description="Candidate's first name")
-    last_name: str = Field(
-        description="Candidate's last name. It must be a single word. Do not include the middle name or initial here"
-    )
-    middle_name: Optional[str] = Field(
+    firstName: str = Field(description="Candidate's first name")
+    middleName: Optional[str] = Field(
         description="Candidate's middle name, if available", default=None
+    )
+    lastName: str = Field(
+        description="Candidate's last name. It must be a single word. Do not include the middle name or initial here"
     )
     gender: Literal["Male", "Female", "Other", None] = Field(
         description="Infer gender from name or pronouns if possible, otherwise null",
         default=None,
     )
-    date_of_birth: Optional[str] = Field(
-        description="Date of birth explicitly formatted exactly as DD/MM/YYYY. You MUST convert strings like 'January 31 1995' into '31/01/1995'.",
+    emailId: Optional[str] = Field(
+        description="Candidate's email address", default=None
+    )
+    contactNumber: Optional[str] = Field(
+        description="Primary phone number (10-15 digits, do not include country code)",
         default=None,
     )
-    email: Optional[str] = Field(description="Candidate's email address", default=None)
-    primary_contact: Optional[str] = Field(
-        description="Primary phone number (do not include country code)",
-        default=None,
+    alternateNumber: Optional[str] = Field(
+        description="Secondary phone number (10-15 digits), if available", default=None
     )
-    alternate_contact: Optional[str] = Field(
-        description="Secondary phone number, if available", default=None
+    dateOfBirth: Optional[str] = Field(
+        description="Date of birth explicitly formatted exactly as YYYY-MM-DD for JavaScript Date compatibility.",
+        default=None,
     )
 
     # Location Details
-    current_location: Optional[str] = Field(
-        description="City name (e.g., 'Bangalore', 'Chennai')", default=None
+    presentAddress: Optional[str] = Field(
+        description="The complete present street address", default=None
+    )
+    currentLocation: Optional[str] = Field(
+        description="Current city name (e.g., 'Bangalore', 'Chennai')", default=None
+    )
+    preferredLocation: Optional[str] = Field(
+        description="Preferred relocation city, if mentioned", default=None
+    )
+    willingToRelocate: Optional[bool] = Field(
+        description="True if the candidate explicitly mentions willingness to relocate",
+        default=None,
     )
     pincode: Optional[str] = Field(
         description="6-digit postal code/pincode if present", default=None
     )
-    full_present_address: Optional[str] = Field(
-        description="The complete street address", default=None
+
+    # System IDs (LLM will default these to None, backend/frontend must handle them)
+    jdId: Optional[str] = Field(
+        description="Job Description ID. Always return null.", default=None
+    )
+    sourceId: Optional[str] = Field(
+        description="Source ID. Always return null.", default=None
     )
 
     # PHASE 2: Professional Background
-    current_company: Optional[str] = Field(
+    presentCompany: Optional[str] = Field(
         description="Current or most recent company name", default=None
     )
-    designation: Optional[str] = Field(
+    jobRole: Optional[str] = Field(
         description="Current or most recent Job Title / Role", default=None
     )
-
-    total_experience_years: int = Field(
-        description="Total professional experience (Years component only)", default=0
-    )
-    total_experience_months: int = Field(
-        description="Total professional experience (Remaining Months component, 0-11)",
-        default=0,
-    )
-
-    relevant_experience_years: int = Field(
-        description="Experience relevant to core technical skills (Years component)",
-        default=0,
-    )
-    relevant_experience_months: int = Field(
-        description="Experience relevant to core technical skills (Months component)",
-        default=0,
-    )
-
-    # Education
-    highest_qualification: Optional[str] = Field(
+    educationQualification: Optional[str] = Field(
         description="Standardized highest degree (e.g., 'B-TECH', 'M-TECH', 'BCA', 'MCA', 'B.Sc')",
         default=None,
     )
 
-    # Compensation & Availability
-    notice_period_days: Optional[int] = Field(
-        description="Notice period in days (e.g., 30, 60, 90). Extract if mentioned.",
+    # Combined Experience Fields (Frontend expects strings)
+    experienceYears: Optional[str] = Field(
+        description="Total professional experience represented as a string (e.g., '5.5' for 5 and a half years)",
         default=None,
     )
-    current_salary_lpa: Optional[float] = Field(
-        description="Current Salary in LPA (Lakhs Per Annum). Extract only the float value.",
-        default=None,
-    )
-    expected_ctc_lpa: Optional[float] = Field(
-        description="Expected CTC in LPA (Lakhs Per Annum). Extract only the float value.",
+    relevantExperience: Optional[str] = Field(
+        description="Experience relevant to core technical skills as a string (e.g., '3.0')",
         default=None,
     )
 
+    # Compensation & Availability
+    noticePeriodDays: Optional[str] = Field(
+        description="Notice period in days as a string (e.g., '30', '60').",
+        default=None,
+    )
+    fixedSalaryLpa: Optional[str] = Field(
+        description="Current Fixed Salary in LPA (Lakhs Per Annum) as a string up to 3 decimal places (e.g., '12.500').",
+        default=None,
+    )
+    isVariableSalary: Optional[bool] = Field(
+        description="Set to true if a variable salary or bonus component is mentioned.",
+        default=False,
+    )
+    variableSalaryLpa: Optional[str] = Field(
+        description="Variable Salary in LPA as a string, if mentioned.",
+        default=None,
+    )
+    expectedCtc: Optional[str] = Field(
+        description="Expected CTC in LPA as a string up to 3 decimal places.",
+        default=None,
+    )
+
+    employmentType: Optional[str] = Field(
+        description="Type of employment (e.g., 'Full-Time', 'Contract')", default=None
+    )
+    referredById: Optional[str] = Field(
+        description="Referrer ID. Always return null.", default=None
+    )
+    isReferred: Optional[bool] = Field(
+        description="Always return false.", default=False
+    )
+
     # Technical Expertise
-    technical_expertise: List[SkillExtraction] = Field(
+    skills: List[SkillExtraction] = Field(
         description="List of extracted technical skills mapped to a competency level.",
         default_factory=list,
     )
