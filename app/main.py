@@ -1,3 +1,4 @@
+import asyncio  # NEW: Needed for thread offloading
 import os
 import tempfile
 import time
@@ -11,13 +12,12 @@ from fastapi import FastAPI, File, HTTPException, UploadFile
 from marker.converters.pdf import PdfConverter
 from marker.models import create_model_dict
 from marker.output import text_from_rendered
-from openai import OpenAI
+from openai import AsyncOpenAI
 
 from app.schema import CandidateExtraction
 
-# Initialize using the Groq API key and base URL
 client = instructor.from_openai(
-    OpenAI(
+    AsyncOpenAI(
         base_url="https://api.groq.com/openai/v1",
         api_key=os.environ.get("GROQ_API_KEY"),
     ),
@@ -50,7 +50,6 @@ app = FastAPI(title="Resume Auto-Populate API", lifespan=lifespan)
 
 @app.post("/api/v1/extract-resume")
 async def extract_resume(file: UploadFile = File(...)):
-    # 1. Expand allowed extensions
     allowed_extensions = (".pdf", ".png", ".jpg", ".jpeg")
     filename = file.filename.lower()
 
@@ -63,7 +62,6 @@ async def extract_resume(file: UploadFile = File(...)):
     tmp_file_path = None
 
     try:
-        # 2. Create temporary file for the pdf since the conberter requires it
         suffix = os.path.splitext(file.filename)[1]
         with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
             tmp.write(await file.read())
@@ -75,9 +73,8 @@ async def extract_resume(file: UploadFile = File(...)):
 
         if suffix == ".pdf":
             try:
-                # This opens the file, loops the pages, formats columns, and returns a clean Markdown string.
                 full_text = pymupdf4llm.to_markdown(tmp_file_path)
-                # If the PDF is just a scanned image, it will yield very little text
+
                 if len(full_text.strip()) < 50:
                     print(
                         "Parsing using PyMuPDFLLM yielded very little text, triggering Marker OCR"
@@ -92,9 +89,9 @@ async def extract_resume(file: UploadFile = File(...)):
 
         # If the file is not a PDF or the PDF is a scanned image, use Marker OCR
         if needs_ocr:
-            # This handles PDFs and Images natively
             print(f"Triggering Marker OCR for {filename}...")
-            rendered = converter_instance(tmp_file_path)
+            # Offload CPU-heavy OCR to a background thread so the API doesn't freeze
+            rendered = await asyncio.to_thread(converter_instance, tmp_file_path)
             full_text, _, _ = text_from_rendered(rendered)
 
         if not full_text or len(full_text) < 20:
@@ -102,7 +99,6 @@ async def extract_resume(file: UploadFile = File(...)):
                 status_code=422, detail="Extraction using Marker Converter failed"
             )
 
-        # 3. Pass the retrieved text from the pdf to an LLM for semantic retrieval with a particular schema
         system_prompt = """
         You are an expert ATS data extraction system tailored for the Indian IT job market.
         Extract the requested fields from the resume markdown.
@@ -112,7 +108,7 @@ async def extract_resume(file: UploadFile = File(...)):
         If any of the requested fields are not explicitly stated in the resume, return null for those fields rather than guessing them.
         """
 
-        candidate_data = client.chat.completions.create(
+        candidate_data = await client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             response_model=CandidateExtraction,
             messages=[
@@ -133,6 +129,5 @@ async def extract_resume(file: UploadFile = File(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     finally:
-        # 4. Clean up the temporary file regardless of success or failure
         if tmp_file_path and os.path.exists(tmp_file_path):
             os.remove(tmp_file_path)
