@@ -7,6 +7,7 @@ from contextlib import asynccontextmanager
 import instructor
 import pymupdf4llm
 from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi.responses import ORJSONResponse
 
 # Marker OCR imports
 from marker.converters.pdf import PdfConverter
@@ -48,7 +49,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Resume Auto-Populate API", lifespan=lifespan)
 
 
-@app.post("/api/v1/extract-resume")
+@app.post("/api/v1/extract-resume", response_class=ORJSONResponse)
 async def extract_resume(file: UploadFile = File(...)):
     allowed_extensions = (".pdf", ".png", ".jpg", ".jpeg")
     filename = file.filename.lower()
