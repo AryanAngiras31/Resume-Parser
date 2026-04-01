@@ -4,8 +4,8 @@ from pydantic import BaseModel, Field
 
 
 class SkillExtraction(BaseModel):
-    # Note: Changed to skillName. The LLM cannot know your database's numeric skillId.
-    # Your backend must map this extracted string to the correct DB skillId.
+    # The LLM cannot know your database's numeric skillId.
+    # The backend must map this extracted string to the correct DB skillId.
     skillName: str = Field(
         description="The exact name of the technical skill, tool, or framework (e.g., 'AWS Deployment', 'Spring Boot')."
     )
@@ -20,15 +20,16 @@ class CandidateExtraction(BaseModel):
     """
 
     # PHASE 1: Personal Identity & Contact
-    firstName: str = Field(description="Candidate's first name")
+    firstName: str = Field(description="Candidate's first name. Convert to title case")
     middleName: Optional[str] = Field(
-        description="Candidate's middle name, if available", default=None
+        description="Candidate's middle name, if available. Convert to title case",
+        default=None,
     )
     lastName: str = Field(
-        description="Candidate's last name. It must be a single word. Do not include the middle name or initial here"
+        description="Candidate's last name. It must be a single word. Do not include the middle name or initial here. Convert to title case."
     )
     gender: Literal["Male", "Female", "Other", None] = Field(
-        description="Infer gender from name or pronouns if possible, otherwise null",
+        description="Infer gender from name or pronouns if possible",
         default=None,
     )
     emailId: Optional[str] = Field(
@@ -74,7 +75,8 @@ class CandidateExtraction(BaseModel):
 
     # PHASE 2: Professional Background
     presentCompany: Optional[str] = Field(
-        description="Current or most recent company name", default=None
+        description="Current or most recent company name from the professional experience or employment history sections",
+        default=None,
     )
     jobRole: Optional[str] = Field(
         description="Current or most recent Job Title / Role", default=None
