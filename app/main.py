@@ -3,6 +3,7 @@ import tempfile
 import time
 from contextlib import asynccontextmanager
 
+import fitz
 import instructor
 from fastapi import FastAPI, File, HTTPException, UploadFile
 
@@ -68,9 +69,35 @@ async def extract_resume(file: UploadFile = File(...)):
             tmp.write(await file.read())
             tmp_file_path = tmp.name
 
-        # This handles PDFs and Images natively
-        rendered = converter_instance(tmp_file_path)
-        full_text, _, _ = text_from_rendered(rendered)
+        # Try to parse the file using PyMuPDF (fitz)
+        full_text = ""
+        needs_ocr = False
+
+        if suffix == ".pdf":
+            try:
+                doc = fitz.open(tmp_file_path)
+                for page in doc:
+                    full_text += page.get_text()
+                doc.close()
+                # If the PDF is just a scanned image, it will yield very little text
+                if len(full_text.strip()) < 50:
+                    print(
+                        "Parsing using PyMuPDF yielded very little text, triggering Marker OCR"
+                    )
+                    needs_ocr = True
+            except Exception as e:
+                print(f"An error occurred while parsing the PDF using PyMuPDF:\n{e}")
+                needs_ocr = True
+        else:
+            print("Suffix is not a pdf")
+            needs_ocr = True
+
+        # If the file is not a PDF or the PDF is a scanned image, use Marker OCR
+        if needs_ocr:
+            # This handles PDFs and Images natively
+            print(f"Triggering Marker OCR for {filename}...")
+            rendered = converter_instance(tmp_file_path)
+            full_text, _, _ = text_from_rendered(rendered)
 
         if not full_text or len(full_text) < 20:
             raise HTTPException(
