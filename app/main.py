@@ -7,6 +7,7 @@ from contextlib import asynccontextmanager
 import instructor
 import pymupdf4llm
 from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import ORJSONResponse
 
 # Marker OCR imports
@@ -48,6 +49,14 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Resume Auto-Populate API", lifespan=lifespan)
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # replace "*" with the frontend URL
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 @app.post("/api/v1/extract-resume", response_class=ORJSONResponse)
 async def extract_resume(file: UploadFile = File(...)):
@@ -57,6 +66,17 @@ async def extract_resume(file: UploadFile = File(...)):
     if not filename.endswith(allowed_extensions):
         raise HTTPException(
             status_code=400, detail="Only PDF, PNG, and JPG files are supported."
+        )
+
+    # 2MB File Size Limit
+    MAX_FILE_SIZE = 2 * 1024 * 1024  # 2 MB
+    file.file.seek(0, 2)  # Move cursor to end of file
+    file_size = file.file.tell()  # Get current position (size)
+    file.file.seek(0)  # Reset cursor back to the beginning
+
+    if file_size > MAX_FILE_SIZE:
+        raise HTTPException(
+            status_code=413, detail="File too large. Maximum size is 2MB."
         )
 
     start_time = time.time()
@@ -74,7 +94,10 @@ async def extract_resume(file: UploadFile = File(...)):
 
         if suffix == ".pdf":
             try:
-                full_text = pymupdf4llm.to_markdown(tmp_file_path)
+                # Offload PDF parsing to a background thread so the API doesn't freeze
+                full_text = await asyncio.to_thread(
+                    pymupdf4llm.to_markdown, tmp_file_path, pages=[0, 1, 2]
+                )
 
                 if len(full_text.strip()) < 50:
                     print(
