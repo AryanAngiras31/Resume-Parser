@@ -8,7 +8,6 @@ import instructor
 import pymupdf4llm
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import ORJSONResponse
 
 # Marker OCR imports
 from marker.converters.pdf import PdfConverter
@@ -58,7 +57,7 @@ app.add_middleware(
 )
 
 
-@app.post("/api/v1/extract-resume", response_class=ORJSONResponse)
+@app.post("/api/v1/extract-resume")
 async def extract_resume(file: UploadFile = File(...)):
     allowed_extensions = (".pdf", ".png", ".jpg", ".jpeg")
     filename = file.filename.lower()
