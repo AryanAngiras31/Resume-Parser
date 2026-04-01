@@ -90,4 +90,5 @@ uvicorn==0.42.0
 wcwidth==0.6.0
 websockets==16.0
 yarl==1.23.0
-pymupdf==1.24.2
+pymupdf==1.27.2.2
+pymupdf4llm==1.27.2.2

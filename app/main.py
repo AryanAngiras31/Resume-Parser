@@ -3,8 +3,8 @@ import tempfile
 import time
 from contextlib import asynccontextmanager
 
-import fitz
 import instructor
+import pymupdf4llm
 from fastapi import FastAPI, File, HTTPException, UploadFile
 
 # Marker OCR imports
@@ -75,21 +75,19 @@ async def extract_resume(file: UploadFile = File(...)):
 
         if suffix == ".pdf":
             try:
-                doc = fitz.open(tmp_file_path)
-                for page in doc:
-                    full_text += page.get_text()
-                doc.close()
+                # This opens the file, loops the pages, formats columns, and returns a clean Markdown string.
+                full_text = pymupdf4llm.to_markdown(tmp_file_path)
                 # If the PDF is just a scanned image, it will yield very little text
                 if len(full_text.strip()) < 50:
                     print(
-                        "Parsing using PyMuPDF yielded very little text, triggering Marker OCR"
+                        "Parsing using PyMuPDFLLM yielded very little text, triggering Marker OCR"
                     )
                     needs_ocr = True
             except Exception as e:
-                print(f"An error occurred while parsing the PDF using PyMuPDF:\n{e}")
+                print(f"An error occurred while parsing the PDF using PyMuPDFLLM:\n{e}")
                 needs_ocr = True
         else:
-            print("Suffix is not a pdf")
+            print("PyMuPDFLLM failed to read the file since it is not a PDF.")
             needs_ocr = True
 
         # If the file is not a PDF or the PDF is a scanned image, use Marker OCR
