@@ -4,6 +4,7 @@ import tempfile
 import time
 from contextlib import asynccontextmanager
 
+import fitz
 import instructor
 import pymupdf4llm
 from fastapi import FastAPI, File, HTTPException, UploadFile
@@ -93,9 +94,17 @@ async def extract_resume(file: UploadFile = File(...)):
 
         if suffix == ".pdf":
             try:
-                # Offload PDF parsing to a background thread so the API doesn't freeze
+                # Quickly peek at the PDF to get the total page count
+                doc = fitz.open(tmp_file_path)
+                total_pages = doc.page_count
+                doc.close()
+
+                # Read a maximum of 3 pages
+                pages_to_extract = list(range(min(total_pages, 3)))
+
+                # 3. Offload PDF parsing to a background thread
                 full_text = await asyncio.to_thread(
-                    pymupdf4llm.to_markdown, tmp_file_path
+                    pymupdf4llm.to_markdown, tmp_file_path, pages=pages_to_extract
                 )
 
                 if len(full_text.strip()) < 20:
