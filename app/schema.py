@@ -36,7 +36,7 @@ class CandidateExtraction(BaseModel):
         description="Candidate's email address", default=None
     )
     contactNumber: Optional[str] = Field(
-        description="Primary phone number (10-15 digits, do not include country code)",
+        description="Primary phone number (10-15 digits, include the country code if present. If not present use '+91' as the default country code)",
         default=None,
     )
     alternateNumber: Optional[str] = Field(

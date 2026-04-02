@@ -95,10 +95,10 @@ async def extract_resume(file: UploadFile = File(...)):
             try:
                 # Offload PDF parsing to a background thread so the API doesn't freeze
                 full_text = await asyncio.to_thread(
-                    pymupdf4llm.to_markdown, tmp_file_path, pages=[0, 1, 2]
+                    pymupdf4llm.to_markdown, tmp_file_path
                 )
 
-                if len(full_text.strip()) < 50:
+                if len(full_text.strip()) < 20:
                     print(
                         "Parsing using PyMuPDFLLM yielded very little text, triggering Marker OCR"
                     )
