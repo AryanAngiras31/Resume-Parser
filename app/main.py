@@ -151,11 +151,25 @@ async def extract_resume(file: UploadFile = File(...)):
         )
 
         processing_time = round((time.time() - start_time) * 1000)
+        # Get this pydantic model as a dictionary
+        candidate_data_dict = candidate_data.model_dump()
 
+        # Return the first mandatory field not filled so that the frontend can hightlight it
+        mandatory_fields = ['firstName', 'lastName', 'dateOfBirth', 'emailId', 'contactNumber', 'currentLocation', 
+        'pincode', 'presentAddress', 'presentCompany', 'jobRole', 'experienceYears', 'relevantExperience', 
+        'educationQualification', 'noticePeriodDays', 'fixedSalaryLpa', 'expectedCtc']
+
+        first_missing_mandatory_field = None
+        for field in mandatory_fields:
+            if not candidate_data_dict[field]:
+                first_missing_mandatory_field = field
+                break
+                
         return {
             "status": "success",
             "processing_time_ms": processing_time,
-            "data": candidate_data.model_dump(),
+            "go_to": first_missing_mandatory_field,
+            "data": candidate_data_dict,
         }
 
     except Exception as e:
