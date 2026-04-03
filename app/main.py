@@ -155,20 +155,35 @@ async def extract_resume(file: UploadFile = File(...)):
         candidate_data_dict = candidate_data.model_dump()
 
         # Return the first mandatory field not filled so that the frontend can hightlight it
-        mandatory_fields = ['firstName', 'lastName', 'dateOfBirth', 'emailId', 'contactNumber', 'currentLocation', 
-        'pincode', 'presentAddress', 'presentCompany', 'jobRole', 'experienceYears', 'relevantExperience', 
-        'educationQualification', 'noticePeriodDays', 'fixedSalaryLpa', 'expectedCtc']
+        mandatory_fields = [
+            "firstName",
+            "lastName",
+            "gender",
+            "dateOfBirth",
+            "emailId",
+            "contactNumber",
+            "currentLocation",
+            "pincode",
+            "presentAddress",
+            "presentCompany",
+            "jobRole",
+            "experienceYears",
+            "relevantExperience",
+            "educationQualification",
+            "noticePeriodDays",
+            "fixedSalaryLpa",
+            "expectedCtc",
+        ]
 
-        first_missing_mandatory_field = None
-        for field in mandatory_fields:
-            if not candidate_data_dict[field]:
-                first_missing_mandatory_field = field
-                break
-                
+        missing_fields = [
+            field for field in mandatory_fields if not candidate_data_dict[field]
+        ]
+
         return {
             "status": "success",
             "processing_time_ms": processing_time,
-            "go_to": first_missing_mandatory_field,
+            "missing_fields": missing_fields,
+            "num_missing_fields": len(missing_fields),
             "data": candidate_data_dict,
         }
 
