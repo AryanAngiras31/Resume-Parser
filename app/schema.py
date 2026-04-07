@@ -58,7 +58,7 @@ class CandidateExtraction(BaseModel):
     lastName: str = Field(
         description="Candidate's last name. It must be a single word. Do not include the middle name or initial here. Convert to title case."
     )
-    gender: Literal["Male", "Female", "Other", None] = Field(
+    gender: Optional[Literal["Male", "Female", "Other"]] = Field(
         description="Infer gender from name or pronouns if possible",
         default=None,
     )

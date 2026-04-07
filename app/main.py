@@ -144,7 +144,7 @@ async def extract_resume(file: UploadFile = File(...)):
                 temperature=0.0,
             ),
         )
-        candidate_data_dict = response.parsed
+        candidate_data_dict = response.parsed.model_dump()
 
         processing_time = round((time.time() - start_time) * 1000)
 
