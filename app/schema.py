@@ -14,6 +14,36 @@ class SkillExtraction(BaseModel):
     )
 
 
+class JobRecord(BaseModel):
+    companyName: str = Field(description="The name of the company or employer.")
+    responsibilities: str = Field(
+        description="""Combine ALL bullet points, client names, and descriptions for this specific job into a single string.
+        Extract word-for-word. DO NOT skip or summarize any bullet points."""
+    )
+
+
+class ProfessionalDetails(BaseModel):
+    professionalSummary: Optional[str] = Field(
+        description="""The candidate's professional summary, profile, or objective statement.
+        Extract this word-for-word if present. Do not summarize.""",
+        default=None,
+    )
+    workExperienceDetails: List[JobRecord] = Field(
+        description="An array containing a record for EVERY job listed in the Experience/Employment history section. Do not skip any jobs.",
+        default_factory=list,
+    )
+    projectDetails: Optional[str] = Field(
+        description="""A combined string of the descriptions strictly from a STANDALONE 'Projects' section.
+        CRITICAL: If a project or client is listed underneath an employer in the Work Experience section, DO NOT put it here. Leave it in the workExperienceDetails.""",
+        default=None,
+    )
+    educationAndCertifications: Optional[str] = Field(
+        description="""Details regarding the candidate's degrees, universities, and certifications.
+        Extract word-for-word.""",
+        default=None,
+    )
+
+
 class CandidateExtraction(BaseModel):
     """
     Schema for extracting candidate information to perfectly match the HRMS frontend CandidateFormValues interface.
@@ -132,4 +162,10 @@ class CandidateExtraction(BaseModel):
     skills: List[SkillExtraction] = Field(
         description="List of extracted technical skills mapped to a competency level.",
         default_factory=list,
+    )
+
+    # Professional detail data for candidate ranking engine
+    professionalDetails: Optional[ProfessionalDetails] = Field(
+        description="Structured extraction of the candidate's unstructured professional text.",
+        default=None,
     )
