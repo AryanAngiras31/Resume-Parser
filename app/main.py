@@ -9,6 +9,7 @@ import instructor
 import pymupdf4llm
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from google import genai
 
 # Marker OCR imports
 from marker.converters.pdf import PdfConverter
@@ -18,13 +19,7 @@ from openai import AsyncOpenAI
 
 from app.schema import CandidateExtraction
 
-client = instructor.from_openai(
-    AsyncOpenAI(
-        base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
-        api_key=os.environ.get("GEMINI_API_KEY"),
-    ),
-    mode=instructor.Mode.JSON,
-)
+client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
 
 # Global variable to hold converter and models in memory
 converter_instance = None
@@ -140,19 +135,18 @@ async def extract_resume(file: UploadFile = File(...)):
         If any of the requested fields are not explicitly stated in the resume, return null for those fields rather than guessing them.
         """
 
-        candidate_data = await client.chat.completions.create(
+        response = await client.aio.models.generate_content(
             model="gemini-2.5-flash",
-            response_model=CandidateExtraction,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": f"Resume Markdown:\n\n{full_text}"},
-            ],
-            temperature=0.0,
+            contents=f"System: {system_prompt}\n\nUser: Resume Markdown:\n\n{full_text}",
+            config=genai.types.GenerateContentConfig(
+                response_mime_type="application/json",
+                response_schema=CandidateExtraction,
+                temperature=0.0,
+            ),
         )
+        candidate_data_dict = response.parsed
 
         processing_time = round((time.time() - start_time) * 1000)
-        # Get this pydantic model as a dictionary
-        candidate_data_dict = candidate_data.model_dump()
 
         # Return the first mandatory field not filled so that the frontend can hightlight it
         mandatory_fields = [
