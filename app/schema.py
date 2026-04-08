@@ -16,9 +16,9 @@ class SkillExtraction(BaseModel):
 
 class JobRecord(BaseModel):
     companyName: str = Field(description="The name of the company or employer.")
-    responsibilities: str = Field(
-        description="""Combine ALL bullet points, client names, and descriptions for this specific job into a single string.
-        Extract word-for-word. DO NOT skip or summarize any bullet points."""
+    bulletPoints: List[str] = Field(
+        description="Extract EVERY SINGLE bullet point and sentence under this job exactly as written. Do not summarize. Create a new string in this array for each bullet point.",
+        default_factory=list,
     )
 
 
