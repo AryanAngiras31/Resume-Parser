@@ -23,24 +23,22 @@ class JobRecord(BaseModel):
 
 
 class ProfessionalDetails(BaseModel):
-    professionalSummary: Optional[str] = Field(
-        description="""The candidate's professional summary, profile, or objective statement.
-        Extract this word-for-word if present. Do not summarize.""",
-        default=None,
+    professionalSummary: List[str] = Field(
+        description="""Extract EVERY SINGLE sentence from the candidate's professional summary, profile, or objective statement exactly as written. Create a new string in this array for each sentence. Do not summarize, truncate, or skip words.""",
+        default_factory=list,
     )
     workExperienceDetails: List[JobRecord] = Field(
         description="An array containing a record for EVERY job listed in the Experience/Employment history section. Do not skip any jobs.",
         default_factory=list,
     )
-    projectDetails: Optional[str] = Field(
-        description="""A combined string of the descriptions strictly from a STANDALONE 'Projects' section.
+    projectDetails: List[str] = Field(
+        description="""Extract EVERY SINGLE sentence or bullet point from a STANDALONE 'Projects' section exactly as written. Create a new string in this array for each sentence.
         CRITICAL: If a project or client is listed underneath an employer in the Work Experience section, DO NOT put it here. Leave it in the workExperienceDetails.""",
-        default=None,
+        default_factory=list,
     )
-    educationAndCertifications: Optional[str] = Field(
-        description="""Details regarding the candidate's degrees, universities, and certifications.
-        Extract word-for-word.""",
-        default=None,
+    educationAndCertifications: List[str] = Field(
+        description="""Extract EVERY SINGLE sentence or bullet point regarding the candidate's degrees, universities, and certifications exactly as written. Create a new string in this array for each item. Do not summarize.""",
+        default_factory=list,
     )
 
 

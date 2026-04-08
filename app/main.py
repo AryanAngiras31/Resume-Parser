@@ -20,8 +20,8 @@ from app.schema import CandidateExtraction
 
 client = instructor.from_openai(
     AsyncOpenAI(
-        base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
-        api_key=os.environ.get("GEMINI_API_KEY"),
+        base_url="https://api.groq.com/openai/v1",
+        api_key=os.environ.get("GROQ_API_KEY"),
     ),
     mode=instructor.Mode.JSON,
 )
@@ -141,7 +141,7 @@ async def extract_resume(file: UploadFile = File(...)):
         """
 
         candidate_data = await client.chat.completions.create(
-            model="gemini-2.5-flash",
+            model="llama-3.3-70b-versatile",
             response_model=CandidateExtraction,
             messages=[
                 {"role": "system", "content": system_prompt},
