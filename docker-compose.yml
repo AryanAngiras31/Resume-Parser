@@ -3,7 +3,7 @@ services:
   resume-api:
     build: .
     ports:
-      - "8000:8000"
+      - "8080:8080"
     environment:
       - GROQ_API_KEY=${GROQ_API_KEY}
       - GEMINI_API_KEY=${GEMINI_API_KEY}

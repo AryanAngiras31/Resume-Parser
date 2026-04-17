@@ -150,9 +150,18 @@ async def extract_resume(file: UploadFile = File(...)):
             ],
             temperature=0.0,
         )
-        candidate_data_dict = response.parsed.model_dump()
+        candidate_data_dict = candidate_data.model_dump()
 
-        processing_time = round((time.time() - start_time) * 1000)
+        # Flatten ProfessionalDetails list fields into single strings
+        prof = candidate_data_dict.get("professionalDetails")
+        if prof:
+            prof["professionalSummary"] = " ".join(prof.get("professionalSummary", []))
+            prof["projectDetails"] = " ".join(prof.get("projectDetails", []))
+            prof["educationAndCertifications"] = " ".join(prof.get("educationAndCertifications", []))
+    
+        # Join bulletPoints within each JobRecord
+        for job in prof.get("workExperienceDetails", []):
+            job["bulletPoints"] = " ".join(job.get("bulletPoints", []))
 
         # Return the first mandatory field not filled so that the frontend can hightlight it
         mandatory_fields = [
@@ -178,6 +187,8 @@ async def extract_resume(file: UploadFile = File(...)):
         missing_fields = [
             field for field in mandatory_fields if not candidate_data_dict[field]
         ]
+
+        processing_time = round((time.time() - start_time) * 1000)
 
         return {
             "status": "success",
