@@ -117,7 +117,18 @@ curl -X 'POST' \
     "skills": [
       { "skillName": "Python", "skillLevel": "Advanced" },
       { "skillName": "AWS Deployment", "skillLevel": "Intermediate" }
-    ]
+    ],
+    "professionalDetails": {
+      "professionalSummary": "Experienced software engineer with expertise in Python...",
+      "workExperienceDetails": [
+        {
+          "companyName": "Tech Solutions Inc.",
+          "bulletPoints": "Led a team of 5 developers to build the core platform. Implemented CI/CD pipelines reducing deployment time by 50%."
+        }
+      ],
+      "projectDetails": "Built an open-source CLI tool for resume parsing. Contributed to multiple Python libraries.",
+      "educationAndCertifications": "Bachelor of Technology from IIT Bombay. AWS Certified Solutions Architect."
+    }
   }
 }
 ```
