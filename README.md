@@ -48,7 +48,7 @@ Docker handles all system-level dependencies like Tesseract and Ghostscript auto
 If running locally without Docker, you must install system dependencies first:
 
 1. **Install System Dependencies**:
-   - **Linux**: `sudo apt install tesseract-ocr ghostscript libgl1`
+   - **Linux**: `sudo apt install tesseract-ocr ghostscript libgl1 libglib2.0-0`
    - **macOS**: `brew install tesseract ghostscript`
 
 2. **Install Python Packages**:
@@ -85,6 +85,12 @@ curl -X 'POST' \
 {
   "status": "success",
   "processing_time_ms": 1250,
+  "missing_fields": [
+    "middleName",
+    "alternateNumber",
+    "preferredLocation"
+  ],
+  "num_missing_fields": 3,
   "data": {
     "firstName": "John",
     "middleName": null,
